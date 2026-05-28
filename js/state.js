@@ -3,6 +3,7 @@ const State = {
     year: 2026,
     races: [],
     standings: [],
+    constructorStandings: [],
     expandedCard: null,
     loading: true,
     error: false,
@@ -12,6 +13,7 @@ const State = {
         this.year = year;
         this.races = [];
         this.standings = [];
+        this.constructorStandings = [];
         this.expandedCard = null;
         this.loading = true;
         this.error = false;
@@ -24,6 +26,10 @@ const State = {
 
     setStandings(standings) {
         this.standings = standings;
+    },
+
+    setConstructorStandings(standings) {
+        this.constructorStandings = standings;
     },
 
     setLoading(val) {

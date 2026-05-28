@@ -12,13 +12,15 @@ const App = {
         this.bindStandingsToggle();
 
         try {
-            const [races, standings] = await Promise.all([
+            const [races, standings, constructorStandings] = await Promise.all([
                 F1API.getCalendar(year),
                 F1API.getDriverStandings(year),
+                F1API.getConstructorStandings(year),
             ]);
 
             State.setRaces(races);
             State.setStandings(standings);
+            State.setConstructorStandings(constructorStandings);
             State.setUsingFallback(false);
         } catch (err) {
             console.warn('API fetch failed, using fallback:', err.message);
@@ -41,8 +43,11 @@ const App = {
 
     renderAll() {
         // Standings
-        const standingsTable = document.getElementById('standingsTable');
-        standingsTable.innerHTML = DOM.renderStandings(State.standings);
+        const driverTable = document.getElementById('driverStandingsTable');
+        driverTable.innerHTML = DOM.renderStandings(State.standings);
+
+        const constructorTable = document.getElementById('constructorStandingsTable');
+        constructorTable.innerHTML = DOM.renderConstructorStandings(State.constructorStandings);
 
         // Race cards
         const raceList = document.getElementById('raceList');
@@ -123,19 +128,21 @@ const App = {
     },
 
     bindStandingsToggle() {
-        const toggle = document.getElementById('standingsToggle');
-        const body = document.getElementById('standingsBody');
-        if (toggle && body) {
+        const bindToggle = (toggleId, bodyId, hasData) => {
+            const toggle = document.getElementById(toggleId);
+            const body = document.getElementById(bodyId);
+            if (!toggle || !body) return;
             toggle.onclick = () => {
                 const open = body.classList.toggle('open');
                 toggle.querySelector('.standings-chevron').textContent = open ? '▴' : '▾';
             };
-            // Open by default if there are standings
-            if (State.standings.length > 0) {
+            if (hasData) {
                 body.classList.add('open');
                 toggle.querySelector('.standings-chevron').textContent = '▴';
             }
-        }
+        };
+        bindToggle('driverStandingsToggle', 'driverStandingsBody', State.standings.length > 0);
+        bindToggle('constructorStandingsToggle', 'constructorStandingsBody', State.constructorStandings.length > 0);
     },
 
     renderYearSelector() {

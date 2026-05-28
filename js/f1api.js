@@ -132,10 +132,63 @@ const F1API = {
         }
     },
 
-    // Local fallback calendar — 2026 provisional
+    async getConstructorStandings(year) {
+        try {
+            const data = await this.fetchJSON(`/${year}/constructorStandings.json`);
+            const standings = data.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+            return standings.map(s => ({
+                position: s.position,
+                constructor: s.Constructor.name,
+                points: s.points,
+                wins: s.wins,
+            }));
+        } catch {
+            return [];
+        }
+    },
+
+    // Local fallback calendars
     getFallbackCalendar(year) {
-        if (year !== 2026) return [];
-        return [
+        const data = this.FALLBACK_CALENDARS[year];
+        if (!data) return [];
+        return data.map(r => ({
+            ...r,
+            circuitId: r.circuitName.toLowerCase().replace(/\s+/g, '_'),
+            time: '14:00:00Z',
+            sessions: { fp1: null, fp2: null, fp3: null, qualifying: null, sprint: null, sprintQualifying: null },
+            qualifyingResults: null,
+            raceResults: null,
+        }));
+    },
+
+    FALLBACK_CALENDARS: {
+        2025: [
+            { round: 1, name: 'Australian Grand Prix', date: '2025-03-16', country: 'Australia', circuitName: 'Albert Park Circuit', hasSprint: false },
+            { round: 2, name: 'Chinese Grand Prix', date: '2025-03-23', country: 'China', circuitName: 'Shanghai International Circuit', hasSprint: true },
+            { round: 3, name: 'Japanese Grand Prix', date: '2025-04-06', country: 'Japan', circuitName: 'Suzuka Circuit', hasSprint: false },
+            { round: 4, name: 'Bahrain Grand Prix', date: '2025-04-13', country: 'Bahrain', circuitName: 'Bahrain International Circuit', hasSprint: false },
+            { round: 5, name: 'Saudi Arabian Grand Prix', date: '2025-04-20', country: 'Saudi Arabia', circuitName: 'Jeddah Corniche Circuit', hasSprint: false },
+            { round: 6, name: 'Miami Grand Prix', date: '2025-05-04', country: 'USA', circuitName: 'Miami International Autodrome', hasSprint: true },
+            { round: 7, name: 'Emilia Romagna Grand Prix', date: '2025-05-18', country: 'Italy', circuitName: 'Autodromo Enzo e Dino Ferrari', hasSprint: false },
+            { round: 8, name: 'Monaco Grand Prix', date: '2025-05-25', country: 'Monaco', circuitName: 'Circuit de Monaco', hasSprint: false },
+            { round: 9, name: 'Spanish Grand Prix', date: '2025-06-01', country: 'Spain', circuitName: 'Circuit de Barcelona-Catalunya', hasSprint: false },
+            { round: 10, name: 'Canadian Grand Prix', date: '2025-06-15', country: 'Canada', circuitName: 'Circuit Gilles Villeneuve', hasSprint: false },
+            { round: 11, name: 'Austrian Grand Prix', date: '2025-06-29', country: 'Austria', circuitName: 'Red Bull Ring', hasSprint: true },
+            { round: 12, name: 'British Grand Prix', date: '2025-07-06', country: 'UK', circuitName: 'Silverstone Circuit', hasSprint: false },
+            { round: 13, name: 'Belgian Grand Prix', date: '2025-07-27', country: 'Belgium', circuitName: 'Circuit de Spa-Francorchamps', hasSprint: true },
+            { round: 14, name: 'Hungarian Grand Prix', date: '2025-08-03', country: 'Hungary', circuitName: 'Hungaroring', hasSprint: false },
+            { round: 15, name: 'Dutch Grand Prix', date: '2025-08-31', country: 'Netherlands', circuitName: 'Circuit Zandvoort', hasSprint: false },
+            { round: 16, name: 'Italian Grand Prix', date: '2025-09-07', country: 'Italy', circuitName: 'Autodromo Nazionale di Monza', hasSprint: false },
+            { round: 17, name: 'Azerbaijan Grand Prix', date: '2025-09-21', country: 'Azerbaijan', circuitName: 'Baku City Circuit', hasSprint: false },
+            { round: 18, name: 'Singapore Grand Prix', date: '2025-10-05', country: 'Singapore', circuitName: 'Marina Bay Street Circuit', hasSprint: false },
+            { round: 19, name: 'United States Grand Prix', date: '2025-10-19', country: 'USA', circuitName: 'Circuit of the Americas', hasSprint: true },
+            { round: 20, name: 'Mexico City Grand Prix', date: '2025-10-26', country: 'Mexico', circuitName: 'Autódromo Hermanos Rodríguez', hasSprint: false },
+            { round: 21, name: 'São Paulo Grand Prix', date: '2025-11-09', country: 'Brazil', circuitName: 'Autódromo José Carlos Pace', hasSprint: true },
+            { round: 22, name: 'Las Vegas Grand Prix', date: '2025-11-23', country: 'USA', circuitName: 'Las Vegas Strip Street Circuit', hasSprint: false },
+            { round: 23, name: 'Qatar Grand Prix', date: '2025-11-30', country: 'Qatar', circuitName: 'Losail International Circuit', hasSprint: true },
+            { round: 24, name: 'Abu Dhabi Grand Prix', date: '2025-12-07', country: 'UAE', circuitName: 'Yas Marina Circuit', hasSprint: false },
+        ],
+        2026: [
             { round: 1, name: 'Australian Grand Prix', date: '2026-03-08', country: 'Australia', circuitName: 'Albert Park Circuit', hasSprint: false },
             { round: 2, name: 'Chinese Grand Prix', date: '2026-03-15', country: 'China', circuitName: 'Shanghai International Circuit', hasSprint: true },
             { round: 3, name: 'Japanese Grand Prix', date: '2026-03-29', country: 'Japan', circuitName: 'Suzuka Circuit', hasSprint: false },
@@ -158,13 +211,6 @@ const F1API = {
             { round: 20, name: 'Mexico City Grand Prix', date: '2026-10-25', country: 'Mexico', circuitName: 'Autódromo Hermanos Rodríguez', hasSprint: false },
             { round: 21, name: 'São Paulo Grand Prix', date: '2026-11-01', country: 'Brazil', circuitName: 'Autódromo José Carlos Pace', hasSprint: true },
             { round: 22, name: 'Abu Dhabi Grand Prix', date: '2026-11-15', country: 'UAE', circuitName: 'Yas Marina Circuit', hasSprint: false },
-        ].map(r => ({
-            ...r,
-            circuitId: r.circuitName.toLowerCase().replace(/\s+/g, '_'),
-            time: '14:00:00Z',
-            sessions: { fp1: null, fp2: null, fp3: null, qualifying: null, sprint: null, sprintQualifying: null },
-            qualifyingResults: null,
-            raceResults: null,
-        }));
+        ],
     }
 };

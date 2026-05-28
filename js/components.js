@@ -17,6 +17,23 @@ const DOM = {
     },
 
     // --- Driver Standings ---
+    renderConstructorStandings(standings) {
+        if (!standings || standings.length === 0) {
+            return '<div class="standings-empty">赛季尚未开始，暂无积分数据</div>';
+        }
+        const rows = standings.map((s, i) => {
+            const medal = i < 3 ? ['🥇', '🥈', '🥉'][i] : '';
+            return `
+                <div class="standing-row" style="--delay: ${i * 30}ms">
+                    <span class="standing-pos">${medal || s.position}</span>
+                    <span class="standing-driver" style="font-weight:600">${DOM.escape(s.constructor)}</span>
+                    <span class="standing-pts">${s.points}<span class="pts-label">pts</span></span>
+                    ${s.wins > 0 ? `<span class="standing-wins" title="${s.wins} wins">${s.wins}🏆</span>` : ''}
+                </div>`;
+        }).join('');
+        return `<div class="standings-list">${rows}</div>`;
+    },
+
     renderStandings(standings) {
         if (!standings || standings.length === 0) {
             return '<div class="standings-empty">赛季尚未开始，暂无积分数据</div>';
