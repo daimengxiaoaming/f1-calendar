@@ -61,34 +61,77 @@ const App = {
         const race = State.getRaceByRound(round);
         if (!race) return;
 
+        const prev = State.expandedCard;
         State.expandCard(round);
 
-        // If past race and no results loaded yet, fetch them
+        // Collapse previous card first if different
+        if (prev && prev !== round) {
+            const prevCard = document.querySelector(`.race-card[data-round="${prev}"]`);
+            if (prevCard) prevCard.classList.remove('expanded');
+        }
+
+        // Expand current card immediately (before API fetch)
+        const card = document.querySelector(`.race-card[data-round="${round}"]`);
+        if (card) {
+            card.classList.add('expanded');
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Fetch results in background if past race and not yet loaded
         if (DOM.isPastRace(race.date) && !race.qualifyingResults && !race.raceResults) {
+            // Show loading indicator in results area
+            const detailsInner = card?.querySelector('.details-inner');
+            if (detailsInner) {
+                const existingPending = detailsInner.querySelector('.results-pending');
+                if (existingPending) {
+                    existingPending.innerHTML = '<span class="loading-dot">加载成绩中</span>';
+                }
+            }
+
             const [qResults, rResults] = await Promise.all([
                 F1API.getQualifyingResults(State.year, round),
                 F1API.getRaceResults(State.year, round),
             ]);
             race.qualifyingResults = qResults;
             race.raceResults = rResults;
+
+            // Update just the results portion of this card
+            this.updateCardResults(card, race);
         }
+    },
 
-        this.renderAll();
-        this.bindEvents();
+    updateCardResults(card, race) {
+        if (!card) return;
+        const detailsInner = card.querySelector('.details-inner');
+        if (!detailsInner) return;
 
-        // Scroll to expanded card
-        requestAnimationFrame(() => {
-            const card = document.querySelector(`.race-card[data-round="${round}"]`);
-            if (card) {
-                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-        });
+        const past = DOM.isPastRace(race.date);
+        const hasResults = !!(race.qualifyingResults || race.raceResults);
+
+        // Find and replace the results/pending/upcoming portion
+        const resultsBlock = detailsInner.querySelector('.results-block, .results-pending, .results-upcoming');
+        const anchor = detailsInner.querySelector('.sessions');
+
+        if (resultsBlock) resultsBlock.remove();
+
+        const newHTML = past && hasResults
+            ? DOM.renderResults(race)
+            : (past ? DOM.renderNoResults() : DOM.renderUpcoming());
+
+        if (anchor) {
+            anchor.insertAdjacentHTML('afterend', newHTML);
+        } else {
+            detailsInner.insertAdjacentHTML('beforeend', newHTML);
+        }
     },
 
     collapseCard() {
+        const prevRound = State.expandedCard;
         State.expandCard(null);
-        this.renderAll();
-        this.bindEvents();
+        if (prevRound) {
+            const card = document.querySelector(`.race-card[data-round="${prevRound}"]`);
+            if (card) card.classList.remove('expanded');
+        }
     },
 
     bindEvents() {

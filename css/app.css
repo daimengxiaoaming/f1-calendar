@@ -612,6 +612,16 @@ body {
     font-size: 0.9rem;
 }
 
+/* --- Inline loading --- */
+.loading-dot {
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1; }
+}
+
 /* --- Animations --- */
 @keyframes fadeSlideIn {
     from {
