@@ -5,6 +5,7 @@ import urllib.request
 import urllib.error
 import json
 import os
+import ssl
 
 PORT = int(os.environ.get("PORT", 8080))
 API_BASE = "https://api.jolpi.ca/ergast/f1"
@@ -27,7 +28,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "GYX-F1-Calendar/1.0"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
+            ctx = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
                 data = resp.read()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
