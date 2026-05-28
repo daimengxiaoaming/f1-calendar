@@ -1,7 +1,43 @@
-// Jolpica F1 API wrapper with local fallback
+// Jolpica F1 API wrapper with local fallback + localStorage cache
 // Uses local /api/ proxy to avoid CORS issues
 const F1API = {
     BASE: '/api',
+
+    // --- localStorage cache ---
+    _cacheKey(year, round, type) {
+        return `f1-${year}-${round}-${type}`;
+    },
+
+    _getCache(key) {
+        try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+    },
+
+    _setCache(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch { /* storage full or unavailable */ }
+    },
+
+    // Preload cached results into race objects so expansion is instant
+    preloadCachedResults(races, year) {
+        const now = new Date();
+        for (const race of races) {
+            const raceDate = new Date(race.date + 'T23:59:59Z');
+            if (raceDate >= now) continue; // future race — skip
+
+            if (!race.qualifyingResults) {
+                const cached = this._getCache(this._cacheKey(year, race.round, 'quali'));
+                if (cached) race.qualifyingResults = cached;
+            }
+            if (!race.raceResults) {
+                const cached = this._getCache(this._cacheKey(year, race.round, 'race'));
+                if (cached) race.raceResults = cached;
+            }
+        }
+    },
 
     // Circuit map URL mapping: circuitId → F1.com CDN image URL name
     // Uses https://media.formula1.com/ 2018-redesign-assets
@@ -81,10 +117,14 @@ const F1API = {
     },
 
     async getQualifyingResults(year, round) {
+        const key = this._cacheKey(year, round, 'quali');
+        const cached = this._getCache(key);
+        if (cached) return cached;
+
         try {
             const data = await this.fetchJSON(`/${year}/${round}/qualifying.json`);
             const results = data.MRData.RaceTable.Races[0]?.QualifyingResults || [];
-            return results.slice(0, 3).map(r => ({
+            const top3 = results.slice(0, 3).map(r => ({
                 position: r.position,
                 driver: `${r.Driver.givenName} ${r.Driver.familyName}`,
                 code: r.Driver.code || r.Driver.familyName.substring(0, 3).toUpperCase(),
@@ -93,16 +133,22 @@ const F1API = {
                 q2: r.Q2,
                 q3: r.Q3,
             }));
+            if (top3.length > 0) this._setCache(key, top3);
+            return top3;
         } catch {
-            return null;
+            return cached || null;
         }
     },
 
     async getRaceResults(year, round) {
+        const key = this._cacheKey(year, round, 'race');
+        const cached = this._getCache(key);
+        if (cached) return cached;
+
         try {
             const data = await this.fetchJSON(`/${year}/${round}/results.json`);
             const results = data.MRData.RaceTable.Races[0]?.Results || [];
-            return results.slice(0, 3).map(r => ({
+            const top3 = results.slice(0, 3).map(r => ({
                 position: r.position,
                 driver: `${r.Driver.givenName} ${r.Driver.familyName}`,
                 code: r.Driver.code || r.Driver.familyName.substring(0, 3).toUpperCase(),
@@ -110,8 +156,10 @@ const F1API = {
                 time: r.Time?.time || r.status,
                 points: r.points,
             }));
+            if (top3.length > 0) this._setCache(key, top3);
+            return top3;
         } catch {
-            return null;
+            return cached || null;
         }
     },
 

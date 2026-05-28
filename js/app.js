@@ -22,12 +22,18 @@ const App = {
             State.setStandings(standings);
             State.setConstructorStandings(constructorStandings);
             State.setUsingFallback(false);
+
+            // Preload cached results for past races (instant expand)
+            F1API.preloadCachedResults(races, year);
         } catch (err) {
             console.warn('API fetch failed, using fallback:', err.message);
             const fallback = F1API.getFallbackCalendar(year);
             State.setRaces(fallback);
             State.setStandings([]);
             State.setUsingFallback(true);
+
+            // Preload from cache even in fallback mode
+            F1API.preloadCachedResults(fallback, year);
         }
 
         State.setLoading(false);
