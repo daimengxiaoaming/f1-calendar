@@ -2,8 +2,16 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>GYX's F1 Calendar</title>
+    <meta name="description" content="F1 赛历查看器 — 浏览赛季日程、比赛结果与车手积分榜">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="F1 Calendar">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -47,5 +55,10 @@
     <script src="js/f1api.js"></script>
     <script src="js/components.js"></script>
     <script src="js/app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+      }
+    </script>
 </body>
 </html>
